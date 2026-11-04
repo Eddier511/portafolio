@@ -1,708 +1,997 @@
-import { useState, useEffect, useRef, createContext, useContext } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import {
-  ExternalLink, Mail, MapPin, ChevronDown,
-  Menu, X, ArrowUpRight, Linkedin, Award, GraduationCap,
-} from "lucide-react";
+  ArrowRight,
+  Bot,
+  BriefcaseBusiness,
+  Check,
+  ChevronRight,
+  Code2,
+  ExternalLink,
+  FileCode2,
+  Github,
+  Globe2,
+  GraduationCap,
+  Languages,
+  Layers3,
+  Linkedin,
+  Mail,
+  Menu,
+  Network,
+  Rocket,
+  ShoppingBag,
+  Sparkles,
+  Workflow,
+} from "lucide-react"
+import { Badge } from "./components/ui/badge"
+import { Button } from "./components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/ui/dialog"
+import { Input } from "./components/ui/input"
+import { Label } from "./components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./components/ui/sheet"
+import { Textarea } from "./components/ui/textarea"
+import { content, type Lang } from "./content"
+import logo from "../imports/eddier-soto-logo.png"
 
-// ─── i18n ─────────────────────────────────────────────────────────────────────
+const serviceIcons = [Globe2, Layers3, ShoppingBag, Rocket, Workflow, Bot]
+const navTargets = ["home", "services", "career", "contact"] as const
 
-type Lang = "es" | "en";
+function goTo(id: string) {
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
 
-const T = {
-  es: {
-    nav: ["Inicio", "Experiencia", "Proyectos", "Skills", "Contacto"],
-    heroRole: "Full-Stack Developer",
-    heroLocation: "Heredia · CR",
-    heroP1: "Desarrollador Full-Stack construyendo aplicaciones web, APIs REST, sistemas internos y automatizaciones. Especializado en Node.js, React y TypeScript — con integración activa de IA (OpenAI API) y despliegue en cloud.",
-    heroP2: "Certificado Azure AZ-900. Inglés C1.",
-    heroCta1: "Ver proyectos",
-    heroCta2: "Contacto",
-    stat1: "Proyectos\ndesarrollados",
-    stat2: "Años de\nexperiencia",
-    stat3: "Nivel\nde inglés",
-    expTitle: "Experiencia",
-    jobRole: "Operaciones de TI & Full-Stack Developer",
-    jobCurrent: "2019 – Actual",
-    jobBullets: [
-      "Desarrollo y mantenimiento de apps web, sistemas internos, paneles admin y servicios backend con Node.js, React y SQL.",
-      "Diseño e integración de APIs REST, autenticación, control de acceso por roles, módulos CRUD y reportes.",
-      "Creación de interfaces y prototipos con FlutterFlow + integración Firebase, autenticación y consumo de APIs.",
-      "Diagnóstico y solución de errores en producción: frontend, backend, APIs, BD, seguridad y despliegues.",
-      "Implementación de automatizaciones para reducir tareas manuales y apoyar operaciones críticas del negocio.",
-      "Uso de Git/GitHub, metodologías ágiles y herramientas de IA para documentar y refactorizar con mayor eficiencia.",
-    ],
-    eduLabel: "Formación académica",
-    edu1Title: "Ingeniería en Desarrollo de Software",
-    edu1Sub: "Universidad Fidélitas",
-    edu2Title: "Administración de Negocios · Finanzas",
-    edu2Sub: "Universidad Latina de Costa Rica",
-    certLabel: "Certificaciones e Idiomas",
-    certs: [
-      { badge: "AZ-900", label: "Microsoft Certified: Azure Fundamentals" },
-      { badge: "SFC", label: "Scrum Fundamentals Certified" },
-      { badge: "C1", label: "Inglés avanzado · Documentación técnica" },
-      { badge: "Native", label: "Español nativo" },
-    ],
-    projectsTitle: "Proyectos",
-    projectTypes: {
-      "01": "E-commerce & Automatización",
-      "02": "Plataforma TCU · IA Académica",
-      "03": "Landing Page",
-      "04": "Landing Page · Heredia",
-    },
-    projectDescs: {
-      "01": "Plataforma de comercio con interfaces modernas, servicios backend, autenticación, almacenamiento, pagos en línea con Mercado Pago, validación de tokens y gestión automatizada de órdenes. Flujos orientados a compras automatizadas y retiro inteligente de productos.",
-      "02": "Plataforma institucional universitaria para gestión de anteproyectos TCU. Backend completo con módulo de inteligencia artificial (OpenAI API) para analizar anteproyectos estudiantiles, generar observaciones automáticas y apoyar revisión académica. Portales diferenciados para estudiantes, coordinadores y administración.",
-      "03": "Landing page profesional con diseño visual impactante, optimizada para conversión y rendimiento. Interfaz limpia con animaciones fluidas, estructura semántica sólida y arquitectura React moderna.",
-      "04": "Sitio de presentación corporativa para empresa ubicada en Heredia, Costa Rica. Diseño funcional orientado a captar clientes locales, con navegación clara y secciones informativas bien definidas.",
-    },
-    skillsTitle: "Stack técnico",
-    skillCats: [
-      { label: "Frontend & Low-Code", items: ["React", "TypeScript", "JavaScript ES6+", "HTML5", "CSS3", "Tailwind CSS", "Bootstrap", "Vite", "FlutterFlow", "UI/UX"] },
-      { label: "Backend & APIs", items: ["Node.js", "Express.js", "REST APIs", "Java + Spring Boot", "PHP PDO/MVC", "C#/.NET", "Python", "Auth & Roles"] },
-      { label: "Bases de Datos", items: ["MySQL", "PostgreSQL", "SQL Server", "MariaDB", "Oracle/PL-SQL", "MongoDB", "Firebase Firestore"] },
-      { label: "IA & Automatización", items: ["OpenAI API", "Prompt Engineering", "Análisis asistido por IA", "Automatización de procesos", "Generación de docs"] },
-      { label: "Cloud, DevOps & Monitoreo", items: ["Firebase", "Microsoft Azure", "Render", "Aiven", "Git/GitHub", "Docker", "CI/CD", "Prometheus", "Grafana"] },
-      { label: "Prácticas & Métodos", items: ["Scrum/Agile", "Principios SOLID", "Patrones de Diseño", "Debugging", "Documentación", "Pruebas unitarias"] },
-    ],
-    aboutTitle: "Sobre mí",
-    aboutP1: "Soy Eddier Soto Vargas, desarrollador Full-Stack de Costa Rica. Construyo productos web completos — desde el modelado de datos y APIs REST hasta interfaces React con TypeScript — con enfoque en soluciones mantenibles y bien estructuradas.",
-    aboutP2: "Trabajo en Navisa de Heredia S.A. liderando desarrollo de sistemas internos, integraciones con servicios cloud y automatización de procesos. Paralelamente construyo proyectos propios integrando inteligencia artificial: análisis asistido por OpenAI API, prompt engineering y generación automática de documentación.",
-    aboutP3: "Combino desarrollo tradicional con low-code (FlutterFlow) según las necesidades del proyecto. Me caracterizo por la resolución de problemas, adaptabilidad a distintos stacks y comunicación técnica clara — en español e inglés (C1).",
-    aboutRows: [
-      { label: "Ubicación", value: "Heredia · CR" },
-      { label: "Especialidad", value: "Full-Stack Web" },
-      { label: "Empresa", value: "Navisa de Heredia S.A." },
-      { label: "Universidad", value: "Fidélitas · Ing. Desarrollo de Software" },
-      { label: "Certificación", value: "Azure AZ-900 · SFC" },
-      { label: "Inglés", value: "Avanzado (C1)" },
-    ],
-    contactTitle: "Contacto",
-    contactCta: "¿Tienes un proyecto o posición?",
-    contactCtaAccent: "Conversemos.",
-    contactSub: "Disponible para posiciones full-time, proyectos freelance o colaboraciones. Respondo rápido en español e inglés.",
-    contactLocation: "Heredia · Costa Rica",
-    locationLabel: "Ubicación",
-    footerRole: "Full-Stack Developer · Heredia · Costa Rica",
-  },
-  en: {
-    nav: ["Home", "Experience", "Projects", "Skills", "Contact"],
-    heroRole: "Full-Stack Developer",
-    heroLocation: "Heredia · CR",
-    heroP1: "Full-Stack Developer building web applications, REST APIs, internal systems and automations. Specialized in Node.js, React and TypeScript — with active AI integration (OpenAI API) and cloud deployment.",
-    heroP2: "Azure AZ-900 Certified. English C1.",
-    heroCta1: "View projects",
-    heroCta2: "Contact",
-    stat1: "Projects\ndelivered",
-    stat2: "Years of\nexperience",
-    stat3: "English\nlevel",
-    expTitle: "Experience",
-    jobRole: "IT Operations & Full-Stack Developer",
-    jobCurrent: "2019 – Present",
-    jobBullets: [
-      "Development and maintenance of web apps, internal systems, admin panels and backend services using Node.js, React and SQL.",
-      "Design and integration of REST APIs, authentication, role-based access control, CRUD modules and reports.",
-      "UI and prototype creation with FlutterFlow + Firebase integration, authentication and API consumption.",
-      "Diagnosis and resolution of production issues: frontend, backend, APIs, databases, security and deployments.",
-      "Implementation of automations to reduce manual tasks and support critical business operations.",
-      "Use of Git/GitHub, agile methodologies and AI tools to document, refactor and solve technical problems efficiently.",
-    ],
-    eduLabel: "Education",
-    edu1Title: "Software Development Engineering",
-    edu1Sub: "Universidad Fidélitas",
-    edu2Title: "Business Administration · Finance",
-    edu2Sub: "Universidad Latina de Costa Rica",
-    certLabel: "Certifications & Languages",
-    certs: [
-      { badge: "AZ-900", label: "Microsoft Certified: Azure Fundamentals" },
-      { badge: "SFC", label: "Scrum Fundamentals Certified" },
-      { badge: "C1", label: "Advanced English · Technical documentation" },
-      { badge: "Native", label: "Native Spanish" },
-    ],
-    projectsTitle: "Projects",
-    projectTypes: {
-      "01": "E-commerce & Automation",
-      "02": "University Platform · Academic AI",
-      "03": "Landing Page",
-      "04": "Landing Page · Heredia",
-    },
-    projectDescs: {
-      "01": "Commerce platform with modern interfaces, backend services, authentication, storage, online payments via Mercado Pago, token validation and automated order management. Flows oriented to automated purchases and smart product pickup.",
-      "02": "University institutional platform for managing TCU pre-projects. Full backend with an AI module (OpenAI API) to analyze student proposals, generate automatic observations and support academic review. Separate portals for students, coordinators and administration.",
-      "03": "Professional landing page with a high-impact visual design, optimized for conversion and performance. Clean interface with smooth animations, solid semantic structure and modern React architecture.",
-      "04": "Corporate presentation site for a company based in Heredia, Costa Rica. Functional design focused on attracting local clients, with clear navigation and well-defined informational sections.",
-    },
-    skillsTitle: "Tech Stack",
-    skillCats: [
-      { label: "Frontend & Low-Code", items: ["React", "TypeScript", "JavaScript ES6+", "HTML5", "CSS3", "Tailwind CSS", "Bootstrap", "Vite", "FlutterFlow", "UI/UX"] },
-      { label: "Backend & APIs", items: ["Node.js", "Express.js", "REST APIs", "Java + Spring Boot", "PHP PDO/MVC", "C#/.NET", "Python", "Auth & Roles"] },
-      { label: "Databases", items: ["MySQL", "PostgreSQL", "SQL Server", "MariaDB", "Oracle/PL-SQL", "MongoDB", "Firebase Firestore"] },
-      { label: "AI & Automation", items: ["OpenAI API", "Prompt Engineering", "AI-assisted analysis", "Process automation", "Doc generation"] },
-      { label: "Cloud, DevOps & Monitoring", items: ["Firebase", "Microsoft Azure", "Render", "Aiven", "Git/GitHub", "Docker", "CI/CD", "Prometheus", "Grafana"] },
-      { label: "Practices & Methods", items: ["Scrum/Agile", "SOLID Principles", "Design Patterns", "Debugging", "Documentation", "Unit Testing"] },
-    ],
-    aboutTitle: "About me",
-    aboutP1: "I'm Eddier Soto Vargas, a Full-Stack Developer from Costa Rica. I build complete web products — from data modeling and REST APIs to React interfaces with TypeScript — with a focus on maintainable and well-structured solutions.",
-    aboutP2: "I work at Navisa de Heredia S.A. leading internal systems development, cloud service integrations and process automation. I also build personal projects integrating artificial intelligence: AI-assisted analysis with OpenAI API, prompt engineering and automatic documentation generation.",
-    aboutP3: "I combine traditional development with low-code (FlutterFlow) based on project needs. I'm known for problem-solving, adaptability across different stacks and clear technical communication — in both Spanish and English (C1).",
-    aboutRows: [
-      { label: "Location", value: "Heredia · CR" },
-      { label: "Specialty", value: "Full-Stack Web" },
-      { label: "Company", value: "Navisa de Heredia S.A." },
-      { label: "University", value: "Fidélitas · Software Engineering" },
-      { label: "Certifications", value: "Azure AZ-900 · SFC" },
-      { label: "English", value: "Advanced (C1)" },
-    ],
-    contactTitle: "Contact",
-    contactCta: "Have a project or position?",
-    contactCtaAccent: "Let's talk.",
-    contactSub: "Available for full-time positions, freelance projects or collaborations. I respond quickly in both Spanish and English.",
-    contactLocation: "Heredia · Costa Rica",
-    locationLabel: "Location",
-    footerRole: "Full-Stack Developer · Heredia · Costa Rica",
-  },
-} as const;
+function openUrl(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer")
+}
 
-// ─── Context ──────────────────────────────────────────────────────────────────
-
-const LangCtx = createContext<{ lang: Lang; toggle: () => void }>({
-  lang: "es",
-  toggle: () => {},
-});
-const useLang = () => useContext(LangCtx);
-
-// ─── Projects data ────────────────────────────────────────────────────────────
-
-const PROJECTS = [
-  { id: "01", name: "Heypoint", stack: ["React", "TypeScript", "Vite", "Node.js", "Express", "Firebase", "Mercado Pago"], color: "#00d4aa", url: "https://heypoint.com.ar/" },
-  { id: "02", name: "TechSeed", stack: ["React", "TypeScript", "Node.js", "REST APIs", "OpenAI API", "MySQL"], color: "#7c3aed", url: "https://palevioletred-pony-152252.hostingersite.com/login" },
-  { id: "03", name: "NelsonlaraDesing", stack: ["TypeScript", "React", "Node.js"], color: "#f59e0b", url: "https://nelsonlaradesign.com/" },
-  { id: "04", name: "Navisa", stack: ["JavaScript", "React", "Node.js"], color: "#ec4899", url: "https://www.navisa.cr/" },
-];
-
-const SKILL_COLORS = ["#00d4aa", "#7c3aed", "#f59e0b", "#ec4899", "#3b82f6", "#10b981"];
-
-// ─── Nav ──────────────────────────────────────────────────────────────────────
-
-function Nav() {
-  const { lang, toggle } = useLang();
-  const t = T[lang];
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handler);
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
-
-  const ids = ["hero", "experience", "projects", "skills", "contact"];
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setOpen(false);
-  };
-
+function SectionHeading({
+  kicker,
+  title,
+  subtitle,
+}: {
+  kicker: string
+  title: string
+  subtitle?: string
+}) {
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/90 backdrop-blur-md border-b border-border" : ""}`}>
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <button
-          onClick={() => scrollTo("hero")}
-          className="font-mono text-sm text-primary tracking-widest uppercase font-medium"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
-        >
-          ESV<span className="text-muted-foreground">_dev</span>
-        </button>
-
-        <div className="hidden md:flex items-center gap-8">
-          <ul className="flex gap-8">
-            {t.nav.map((label, i) => (
-              <li key={ids[i]}>
-                <button
-                  onClick={() => scrollTo(ids[i])}
-                  className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors duration-200"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                >
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          {/* Lang toggle */}
-          <button
-            onClick={toggle}
-            className="flex items-center gap-1 border border-border rounded px-2.5 py-1 hover:border-primary/50 transition-all duration-200"
-          >
-            <span
-              className={`font-mono text-[10px] uppercase tracking-widest transition-colors ${lang === "es" ? "text-primary" : "text-muted-foreground"}`}
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              ES
-            </span>
-            <span className="text-border text-[10px]">/</span>
-            <span
-              className={`font-mono text-[10px] uppercase tracking-widest transition-colors ${lang === "en" ? "text-primary" : "text-muted-foreground"}`}
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              EN
-            </span>
-          </button>
-        </div>
-
-        <div className="md:hidden flex items-center gap-3">
-          <button
-            onClick={toggle}
-            className="flex items-center gap-1 border border-border rounded px-2 py-1"
-          >
-            <span className={`font-mono text-[10px] uppercase ${lang === "es" ? "text-primary" : "text-muted-foreground"}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>ES</span>
-            <span className="text-border text-[10px]">/</span>
-            <span className={`font-mono text-[10px] uppercase ${lang === "en" ? "text-primary" : "text-muted-foreground"}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>EN</span>
-          </button>
-          <button className="text-muted-foreground hover:text-foreground" onClick={() => setOpen(!open)}>
-            {open ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
+    <div className="max-w-3xl">
+      <div className="mb-4 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.22em] text-primary">
+        <span className="h-px w-8 bg-primary" />
+        {kicker}
       </div>
-
-      {open && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md border-b border-border px-6 pb-6">
-          <ul className="flex flex-col gap-4 pt-4">
-            {t.nav.map((label, i) => (
-              <li key={ids[i]}>
-                <button
-                  onClick={() => scrollTo(ids[i])}
-                  className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground w-full text-left transition-colors"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                >
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div
+        role="heading"
+        aria-level={2}
+        className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+      >
+        {title}
+      </div>
+      {subtitle && (
+        <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+          {subtitle}
+        </p>
       )}
-    </nav>
-  );
+    </div>
+  )
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-function Hero() {
-  const { lang } = useLang();
-  const t = T[lang];
+function Header({
+  lang,
+  setLang,
+}: {
+  lang: Lang
+  setLang: (lang: Lang) => void
+}) {
+  const t = content[lang]
+  const navLabels = [t.nav.home, t.nav.services, t.nav.career, t.nav.contact]
+  const navButtons = navLabels.map((label, index) => (
+    <Button
+      key={navTargets[index]}
+      variant="ghost"
+      size="sm"
+      onClick={() => goTo(navTargets[index])}
+      className="text-muted-foreground hover:bg-transparent hover:text-foreground"
+    >
+      {label}
+    </Button>
+  ))
 
   return (
-    <section id="hero" className="min-h-screen flex flex-col justify-center relative overflow-hidden pt-16">
-      <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: "linear-gradient(rgba(0,212,170,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-      <div className="absolute top-1/3 right-0 w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)" }} />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(124,58,237,0.04) 0%, transparent 70%)" }} />
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <Button
+          variant="ghost"
+          onClick={() => goTo("home")}
+          className="gap-3 px-0 hover:bg-transparent"
+        >
+          <span className="flex size-11 items-center justify-center overflow-hidden">
+            <img
+              src={logo}
+              alt=""
+              width="44"
+              height="44"
+              className="size-full scale-150 object-contain"
+            />
+          </span>
+          <span className="hidden text-left sm:block">
+            <span className="block text-sm font-semibold">
+              Eddier Soto Vargas
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Fullstack Engineer
+            </span>
+          </span>
+        </Button>
 
-      <div className="max-w-6xl mx-auto px-6 py-24 relative z-10">
-        <div className="grid md:grid-cols-[1fr_auto] gap-12 items-center">
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="font-mono text-[11px] text-primary tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.heroRole}</span>
-              <span className="text-border">·</span>
-              <span className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.heroLocation}</span>
-            </div>
+        <nav
+          aria-label="Primary navigation"
+          className="hidden items-center gap-1 lg:flex"
+        >
+          {navButtons}
+        </nav>
 
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-6" style={{ fontFamily: "'Outfit', sans-serif" }}>
-              Eddier<br /><span className="text-primary">Soto</span><br />Vargas
-            </h1>
-
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mb-4" style={{ fontFamily: "'Inter', sans-serif" }}>{t.heroP1}</p>
-            <p className="text-sm text-muted-foreground/70 leading-relaxed max-w-xl mb-10" style={{ fontFamily: "'Inter', sans-serif" }}>{t.heroP2}</p>
-
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-              <button
-                onClick={() => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-[11px] uppercase tracking-widest px-6 py-3 rounded transition-all duration-200 hover:opacity-90 hover:gap-3 font-medium"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        <div className="flex items-center gap-2">
+          <div
+            className="flex rounded-md border border-border bg-card p-1"
+            aria-label="Language selector"
+          >
+            {(["es", "en"] as const).map((option) => (
+              <Button
+                key={option}
+                variant={lang === option ? "secondary" : "ghost"}
+                size="sm"
+                aria-pressed={lang === option}
+                onClick={() => setLang(option)}
+                className="h-7 px-2 font-mono text-xs uppercase"
               >
-                {t.heroCta1} <ArrowUpRight size={13} />
-              </button>
-              <a
-                href="mailto:eddiii1194@gmail.com"
-                className="inline-flex items-center gap-2 border border-border text-foreground font-mono text-[11px] uppercase tracking-widest px-6 py-3 rounded transition-all duration-200 hover:border-primary/50 hover:text-primary"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                {t.heroCta2} <Mail size={13} />
-              </a>
-            </div>
-          </div>
-
-          <div className="hidden md:flex flex-col gap-4">
-            {[
-              { num: "6+", label: t.stat1 },
-              { num: "6+", label: t.stat2 },
-              { num: "C1", label: t.stat3 },
-            ].map((s) => (
-              <div key={s.label} className="border border-border rounded p-4 text-right min-w-[115px] bg-card/40">
-                <div className="text-2xl font-bold text-primary mb-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>{s.num}</div>
-                <div className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest leading-tight whitespace-pre-line" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{s.label}</div>
-              </div>
+                {option}
+              </Button>
             ))}
           </div>
-        </div>
+          <Button
+            onClick={() => goTo("contact")}
+            className="hidden sm:inline-flex"
+          >
+            {t.nav.cta}
+            <ArrowRight />
+          </Button>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-muted-foreground animate-bounce">
-          <ChevronDown size={16} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Experience ───────────────────────────────────────────────────────────────
-
-function Experience() {
-  const { lang } = useLang();
-  const t = T[lang];
-
-  return (
-    <section id="experience" className="py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-baseline gap-4 mb-16">
-          <span className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>02 /</span>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.expTitle}</h2>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        <div className="grid md:grid-cols-[1fr_1fr] gap-6 md:gap-8">
-          <div className="border border-border rounded bg-card/40 p-8 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full" style={{ background: "#00d4aa" }} />
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <h3 className="text-lg font-bold mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>Navisa de Heredia S.A.</h3>
-                <p className="font-mono text-[10px] text-primary uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.jobRole}</p>
-              </div>
-              <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider shrink-0" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.jobCurrent}</span>
-            </div>
-            <ul className="space-y-2.5">
-              {t.jobBullets.map((item) => (
-                <li key={item} className="flex gap-3 text-sm text-muted-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  <span className="text-primary mt-1 shrink-0">›</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex flex-col gap-6">
-            <div className="border border-border rounded bg-card/40 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <GraduationCap size={16} className="text-primary" />
-                <span className="font-mono text-[10px] text-primary uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.eduLabel}</span>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-sm mb-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.edu1Title}</h4>
-                  <p className="text-xs text-muted-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>{t.edu1Sub}</p>
-                </div>
-                <div className="border-t border-border pt-4">
-                  <h4 className="font-semibold text-sm mb-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.edu2Title}</h4>
-                  <p className="text-xs text-muted-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>{t.edu2Sub}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-border rounded bg-card/40 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Award size={16} className="text-primary" />
-                <span className="font-mono text-[10px] text-primary uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.certLabel}</span>
-              </div>
-              <div className="space-y-3">
-                {t.certs.map((c) => (
-                  <div key={c.badge} className="flex items-center gap-3">
-                    <span className="font-mono text-[9px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 shrink-0" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{c.badge}</span>
-                    <span className="text-sm text-muted-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>{c.label}</span>
-                  </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="lg:hidden"
+                aria-label={t.nav.menu}
+              >
+                <Menu />
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="border-border bg-background">
+              <SheetHeader>
+                <SheetTitle>Eddier Soto Vargas</SheetTitle>
+                <SheetDescription>Fullstack Engineer</SheetDescription>
+              </SheetHeader>
+              <div className="flex flex-col gap-2 px-4 pt-6">
+                {navLabels.map((label, index) => (
+                  <SheetClose asChild key={navTargets[index]}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => goTo(navTargets[index])}
+                      className="h-11 justify-between text-base"
+                    >
+                      {label}
+                      <ChevronRight />
+                    </Button>
+                  </SheetClose>
                 ))}
               </div>
-            </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function Hero({ lang }: { lang: Lang }) {
+  const t = content[lang].hero
+  return (
+    <section
+      id="home"
+      className="relative flex min-h-screen scroll-mt-16 items-center overflow-hidden border-b border-border/60 pt-20"
+    >
+      <div className="tech-grid absolute inset-0 opacity-40" />
+      <div className="hero-glow absolute inset-0" />
+      <div className="relative mx-auto grid w-full max-w-7xl gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-center lg:py-28">
+        <div>
+          <Badge
+            variant="outline"
+            className="mb-7 gap-2 border-primary/30 bg-primary/5 px-3 py-1 text-primary"
+          >
+            <span className="size-1.5 rounded-full bg-primary shadow-[0_0_1rem_var(--primary)]" />
+            {t.eyebrow}
+          </Badge>
+          <div className="mb-5 font-mono text-sm uppercase tracking-[0.2em] text-muted-foreground">
+            Eddier Soto Vargas
+          </div>
+          <div
+            role="heading"
+            aria-level={1}
+            className="max-w-4xl text-4xl font-semibold leading-tight tracking-[-0.04em] text-foreground sm:text-5xl lg:text-7xl"
+          >
+            {t.title}
+          </div>
+          <p className="mt-7 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+            {t.description}
+          </p>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Button size="lg" onClick={() => goTo("services")}>
+              {t.services}
+              <ArrowRight />
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => goTo("career")}>
+              {t.career}
+            </Button>
+            <Button size="lg" variant="ghost" onClick={() => goTo("contact")}>
+              {t.contact}
+            </Button>
+          </div>
+          <div className="mt-10 flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            {t.availability}
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
 
-// ─── Projects ─────────────────────────────────────────────────────────────────
-
-function Projects() {
-  const { lang } = useLang();
-  const t = T[lang];
-  const [active, setActive] = useState<string | null>(null);
-
-  return (
-    <section id="projects" className="py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-baseline gap-4 mb-16">
-          <span className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>03 /</span>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.projectsTitle}</h2>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-px bg-border rounded overflow-hidden">
-          {PROJECTS.map((p) => (
-            <a
-              key={p.id}
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onMouseEnter={() => setActive(p.id)}
-              onMouseLeave={() => setActive(null)}
-              className="bg-card p-6 md:p-8 relative group transition-all duration-300 cursor-pointer block"
-              style={{ background: active === p.id ? p.color + "12" : undefined }}
-            >
-              <span
-                className="font-mono font-bold leading-none absolute -top-1 right-5 select-none pointer-events-none transition-all duration-300 text-[72px]"
-                style={{ color: active === p.id ? p.color + "18" : "rgba(255,255,255,0.025)" }}
-              >
-                {p.id}
-              </span>
-
-              <div className="relative z-10">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <div>
-                    <h3
-                      className="text-xl font-bold mb-1 transition-colors duration-200"
-                      style={{ fontFamily: "'Outfit', sans-serif", color: active === p.id ? p.color : undefined }}
-                    >
-                      {p.name}
-                    </h3>
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {t.projectTypes[p.id as keyof typeof t.projectTypes]}
-                    </span>
-                  </div>
-                  <ArrowUpRight size={16} className="mt-1 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+        <div className="relative mx-auto w-full max-w-md">
+          <div className="absolute -inset-8 rounded-full bg-primary/10 blur-3xl" />
+          <Card className="relative overflow-hidden border-primary/20 bg-card/80 shadow-2xl shadow-primary/5 backdrop-blur-xl">
+            <CardHeader className="border-b border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <span className="size-2.5 rounded-full bg-muted-foreground/40" />
+                  <span className="size-2.5 rounded-full bg-muted-foreground/30" />
+                  <span className="size-2.5 rounded-full bg-primary/70" />
                 </div>
-
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5 mt-3" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  {t.projectDescs[p.id as keyof typeof t.projectDescs]}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {p.stack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="font-mono text-[9px] uppercase tracking-wide px-2 py-1 rounded border border-border text-muted-foreground transition-all duration-200"
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        borderColor: active === p.id ? p.color + "50" : undefined,
-                        color: active === p.id ? p.color : undefined,
-                      }}
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                <span className="font-mono text-xs text-muted-foreground">
+                  profile.ts
+                </span>
               </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Skills ───────────────────────────────────────────────────────────────────
-
-function Skills() {
-  const { lang } = useLang();
-  const t = T[lang];
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.15 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <section id="skills" className="py-16 md:py-24" ref={ref}>
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-baseline gap-4 mb-16">
-          <span className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>04 /</span>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.skillsTitle}</h2>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded overflow-hidden">
-          {t.skillCats.map((cat, i) => (
-            <div key={cat.label} className="bg-card p-6 transition-all duration-300 hover:bg-card/80">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: SKILL_COLORS[i] }} />
-                <span className="font-mono text-[10px] uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace", color: SKILL_COLORS[i] }}>{cat.label}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {cat.items.map((item, j) => (
-                  <span
-                    key={item}
-                    className="font-mono text-[10px] uppercase tracking-wide px-2 py-1 rounded border text-muted-foreground transition-all duration-500"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      borderColor: visible ? SKILL_COLORS[i] + "30" : "rgba(255,255,255,0.07)",
-                      opacity: visible ? 1 : 0,
-                      transform: visible ? "translateY(0)" : "translateY(6px)",
-                      transitionDelay: `${i * 60 + j * 30}ms`,
-                    }}
+            </CardHeader>
+            <CardContent className="space-y-5 pt-6 font-mono text-sm">
+              <CodeLine
+                token="const"
+                name="engineer"
+                value='"Eddier Soto Vargas"'
+              />
+              <CodeLine token="type" name="role" value='"Fullstack Engineer"' />
+              <CodeLine
+                token="focus"
+                name="build"
+                value='["web", "systems", "AI"]'
+              />
+              <CodeLine
+                token="mindset"
+                name="approach"
+                value='"business-aware"'
+              />
+              <div className="my-6 h-px bg-border" />
+              <div className="grid grid-cols-3 gap-3">
+                {["React", "Node.js", "Python"].map((tech) => (
+                  <div
+                    key={tech}
+                    className="rounded-lg border border-border bg-secondary/50 px-3 py-4 text-center text-xs text-muted-foreground"
                   >
-                    {item}
-                  </span>
+                    {tech}
+                  </div>
                 ))}
               </div>
-            </div>
-          ))}
+            </CardContent>
+            <CardFooter className="border-t border-border bg-primary/5 py-4">
+              <Sparkles className="text-primary" />
+              <span className="text-sm text-muted-foreground">{t.signal}</span>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </section>
-  );
+  )
 }
 
-// ─── About ────────────────────────────────────────────────────────────────────
-
-function About() {
-  const { lang } = useLang();
-  const t = T[lang];
-
+function CodeLine({
+  token,
+  name,
+  value,
+}: {
+  token: string
+  name: string
+  value: string
+}) {
   return (
-    <section id="about" className="py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-baseline gap-4 mb-16">
-          <span className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>05 /</span>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.aboutTitle}</h2>
-          <div className="flex-1 h-px bg-border" />
+    <div className="flex flex-wrap gap-2">
+      <span className="text-primary">{token}</span>
+      <span className="text-chart-2">{name}</span>
+      <span className="text-muted-foreground">=</span>
+      <span className="text-foreground/80">{value};</span>
+    </div>
+  )
+}
+
+function Services({
+  lang,
+  onConsult,
+}: {
+  lang: Lang
+  onConsult: (service: string) => void
+}) {
+  const t = content[lang].services
+  return (
+    <section
+      id="services"
+      className="scroll-mt-16 border-b border-border/60 py-20 sm:py-28"
+    >
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <SectionHeading
+          kicker={t.kicker}
+          title={t.title}
+          subtitle={t.subtitle}
+        />
+        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {t.items.map((service, index) => {
+            const Icon = serviceIcons[index]
+            return (
+              <Card
+                key={service.id}
+                className="group border-border/80 bg-card/60 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card"
+              >
+                <CardHeader>
+                  <div className="mb-3 flex size-11 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+                    <Icon />
+                  </div>
+                  <CardTitle className="text-xl">{service.title}</CardTitle>
+                  <CardDescription className="pt-2 leading-6">
+                    {service.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter className="mt-auto">
+                  <Button
+                    variant="ghost"
+                    onClick={() => onConsult(service.title)}
+                    className="px-0 text-primary hover:bg-transparent hover:text-primary/80"
+                  >
+                    {t.consult}
+                    <ArrowRight className="transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
+      </div>
+    </section>
+  )
+}
 
-        <div className="grid md:grid-cols-[3fr_2fr] gap-10 md:gap-16 items-start">
-          <div className="space-y-4">
-            <p className="text-base text-foreground leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>
-              {t.aboutP1.split("Eddier Soto Vargas").map((part, i) =>
-                i === 0 ? (
-                  <span key={i}>{part}<strong className="text-primary font-medium">Eddier Soto Vargas</strong></span>
-                ) : (
-                  <span key={i}>{part}</span>
-                )
-              )}
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>{t.aboutP2}</p>
-            <p className="text-sm text-muted-foreground leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>{t.aboutP3}</p>
-          </div>
+function Career({ lang }: { lang: Lang }) {
+  const t = content[lang].career
+  return (
+    <section id="career" className="scroll-mt-16 py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <SectionHeading
+          kicker={t.kicker}
+          title={t.title}
+          subtitle={t.subtitle}
+        />
 
-          <div className="space-y-0 border border-border rounded overflow-hidden">
-            {t.aboutRows.map((item, i) => (
-              <div key={item.label} className={`flex justify-between items-center px-5 py-3 ${i % 2 === 0 ? "bg-card/60" : "bg-card/20"}`}>
-                <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{item.label}</span>
-                <span className="text-xs text-foreground text-right" style={{ fontFamily: "'Inter', sans-serif" }}>{item.value}</span>
-              </div>
+        <div className="mt-16 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <SubsectionTitle
+            icon={<BriefcaseBusiness />}
+            title={t.profileLabel}
+          />
+          <div className="space-y-5 text-base leading-7 text-muted-foreground sm:text-lg">
+            {t.profile.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
             ))}
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
 
-// ─── Contact ──────────────────────────────────────────────────────────────────
-
-function Contact() {
-  const { lang } = useLang();
-  const t = T[lang];
-
-  const items = [
-    { icon: <Mail size={14} />, label: "Email", value: "eddiii1194@gmail.com", href: "mailto:eddiii1194@gmail.com" },
-    { icon: <Linkedin size={14} />, label: "LinkedIn", value: "linkedin.com/in/eddiersoto", href: "https://linkedin.com/in/eddiersoto" },
-    { icon: <MapPin size={14} />, label: t.locationLabel, value: t.contactLocation, href: null },
-  ];
-
-  return (
-    <section id="contact" className="py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-baseline gap-4 mb-16">
-          <span className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>06 /</span>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{t.contactTitle}</h2>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
-          <div>
-            <p className="text-xl md:text-2xl font-medium leading-snug mb-5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-              {t.contactCta}<br /><span className="text-primary">{t.contactCtaAccent}</span>
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>{t.contactSub}</p>
-          </div>
-
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.label} className="flex items-center gap-4 p-4 border border-border rounded bg-card/40 group hover:border-primary/30 transition-all duration-200">
-                <span className="text-primary">{item.icon}</span>
-                <div className="flex-1">
-                  <div className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest mb-0.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{item.label}</div>
-                  {item.href ? (
-                    <a href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm text-foreground group-hover:text-primary transition-colors" style={{ fontFamily: "'Inter', sans-serif" }}>
-                      {item.value}
-                    </a>
-                  ) : (
-                    <span className="text-sm text-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>{item.value}</span>
-                  )}
+        <div className="mt-20">
+          <SubsectionTitle
+            icon={<Sparkles />}
+            title={t.resultsLabel}
+            note={t.resultsNote}
+          />
+          <div className="mt-7 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {t.results.map((result) => (
+              <div key={result.label} className="bg-card p-6 sm:p-7">
+                <div className="text-4xl font-semibold tracking-tight text-primary">
+                  {result.value}
                 </div>
-                {item.href && <ExternalLink size={12} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />}
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {result.label}
+                </p>
               </div>
             ))}
           </div>
         </div>
+
+        <div className="mt-20">
+          <SubsectionTitle
+            icon={<BriefcaseBusiness />}
+            title={t.experienceLabel}
+          />
+          <div className="relative mt-8 space-y-6 before:absolute before:bottom-5 before:left-3 before:top-5 before:w-px before:bg-border">
+            {t.experience.map((item) => (
+              <div
+                key={`${item.role}-${item.period}`}
+                className="relative pl-10"
+              >
+                <span className="absolute left-1.5 top-6 size-3 rounded-full border-2 border-background bg-primary shadow-[0_0_1rem_var(--primary)]" />
+                <Card className="gap-0 bg-card/60">
+                  <CardHeader className="gap-3 sm:grid-cols-[1fr_auto]">
+                    <div>
+                      <CardTitle className="text-xl">{item.role}</CardTitle>
+                      <CardDescription className="mt-2 text-primary">
+                        {item.company}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-muted-foreground"
+                    >
+                      {item.period}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="grid gap-3 md:grid-cols-2">
+                      {item.bullets.map((bullet) => (
+                        <li
+                          key={bullet}
+                          className="flex gap-3 text-sm leading-6 text-muted-foreground"
+                        >
+                          <Check className="mt-1 size-4 shrink-0 text-primary" />
+                          {bullet}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-20">
+          <SubsectionTitle
+            icon={<Rocket />}
+            title={t.projectsLabel}
+            note={t.projectsIntro}
+          />
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            {t.projects.map((project, index) => (
+              <Dialog key={project.id}>
+                <Card className="group overflow-hidden bg-card/60 transition-all duration-300 hover:border-primary/40">
+                  <CardHeader>
+                    <div className="mb-5 flex items-center justify-between">
+                      <span className="font-mono text-xs uppercase tracking-widest text-primary">
+                        0{index + 1}
+                      </span>
+                      <FileCode2 className="text-muted-foreground transition-colors group-hover:text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{project.name}</CardTitle>
+                    <CardDescription className="font-mono text-xs uppercase tracking-wider text-primary">
+                      {project.type}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="leading-7 text-muted-foreground">
+                      {project.description}
+                    </p>
+                    <p className="mt-4 text-xs font-medium text-primary">{lang === "es" ? "Incluye mejoras de seguridad y pruebas documentadas" : "Includes security improvements and documented checks"}</p>
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      {project.technologies.slice(0, 4).map((tech) => (
+                        <Badge key={tech} variant="secondary">
+                          {tech}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                        {t.viewProject}
+                        <ArrowRight />
+                      </Button>
+                    </DialogTrigger>
+                  </CardFooter>
+                </Card>
+                <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-card sm:max-w-2xl">
+                  <DialogHeader>
+                    <Badge
+                      variant="outline"
+                      className="mb-2 border-primary/30 text-primary"
+                    >
+                      {project.type}
+                    </Badge>
+                    <DialogTitle className="text-3xl">
+                      {project.name}
+                    </DialogTitle>
+                    <DialogDescription className="pt-3 text-base leading-7">
+                      {project.description}
+                    </DialogDescription>
+                  </DialogHeader>
+                  {project.results.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-3 text-sm font-semibold">
+                        {t.resultsTitle}
+                      </div>
+                      <div className="space-y-2">
+                        {project.results.map((result) => (
+                          <div
+                            key={result}
+                            className="flex gap-3 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground"
+                          >
+                            <Check className="size-4 shrink-0 text-primary" />
+                            {result}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3">
+                    <div className="mb-3 text-sm font-semibold">
+                      {t.technologiesTitle}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {project.technologies.map((tech) => (
+                        <Badge key={tech} variant="secondary">
+                          {tech}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  {"architecture" in project && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {project.architecture.map((layer) => (
+                        <div key={layer.label} className="rounded-lg border border-border bg-secondary/40 p-4">
+                          <div className="text-sm font-semibold text-foreground">{layer.label}</div>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">{layer.stack}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <section className="mt-4 space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-5">
+                    <h3 className="text-lg font-semibold">{lang === "es" ? "Seguridad y pruebas" : "Security and testing"}</h3>
+                    <p className="text-sm leading-6 text-muted-foreground">{project.security.summary}</p>
+                    <div>
+                      <h4 className="mb-3 text-sm font-semibold">{lang === "es" ? "Cambios realizados" : "Changes implemented"}</h4>
+                      <ul className="space-y-3">
+                        {project.security.changes.map((change) => <li key={change} className="flex gap-3 text-sm leading-6 text-muted-foreground"><Check className="mt-1 size-4 shrink-0 text-primary" /><span>{change}</span></li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="mb-3 text-sm font-semibold">{lang === "es" ? "Pruebas y verificación" : "Tests and verification"}</h4>
+                      <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+                        {project.security.tests.map((test) => <li key={test}>{test}</li>)}
+                      </ul>
+                    </div>
+                    <p className="border-t border-border pt-4 text-xs leading-5 text-muted-foreground">{project.security.scope}</p>
+                  </section>
+                  <Button onClick={() => openUrl(project.url)} className="mt-4">
+                    {t.visitProject}
+                    <ExternalLink />
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            ))}
+            <Card className="min-h-56 justify-center border-dashed bg-transparent text-center">
+              <CardContent className="flex flex-col items-center py-8">
+                <div className="mb-4 flex size-11 items-center justify-center rounded-full border border-border text-muted-foreground">
+                  <Rocket />
+                </div>
+                <CardTitle>{t.futureProject}</CardTitle>
+                <CardDescription className="mt-2">
+                  {t.futureDescription}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="mt-20">
+          <SubsectionTitle icon={<Code2 />} title={t.skillsLabel} />
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {t.skills.map((category, index) => {
+              const icons = [Layers3, Network, FileCode2, Bot, Github]
+              const Icon = icons[index]
+              return (
+                <Card key={category.label} className="gap-4 bg-card/60">
+                  <CardHeader>
+                    <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon />
+                    </div>
+                    <CardTitle>{category.label}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {category.items.map((item) => (
+                      <Badge key={item} variant="secondary">
+                        {item}
+                      </Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="mt-20">
+          <SubsectionTitle icon={<GraduationCap />} title={t.educationLabel} />
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1.4fr_0.6fr]">
+            <div className="grid gap-4">
+              {t.education.map((item) => (
+                <Card
+                  key={item.degree}
+                  className="flex-row items-center justify-between gap-4 bg-card/60 p-6"
+                >
+                  <div>
+                    <CardTitle className="text-lg">{item.degree}</CardTitle>
+                    <CardDescription className="mt-2">
+                      {item.school}
+                    </CardDescription>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <Card className="bg-card/60">
+              <CardHeader>
+                <Languages className="text-primary" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {t.languages.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"
+                  >
+                    <span>{item.name}</span>
+                    <Badge variant="secondary">{item.level}</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
       </div>
     </section>
-  );
+  )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
-
-function Footer() {
-  const { lang } = useLang();
-  const t = T[lang];
+function SubsectionTitle({
+  icon,
+  title,
+  note,
+}: {
+  icon: ReactNode
+  title: string
+  note?: string
+}) {
   return (
-    <footer className="border-t border-border py-8">
-      <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-3">
-        <span className="font-mono text-xs text-muted-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>© 2026 Eddier Soto Vargas</span>
-        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.footerRole}</span>
+    <div>
+      <div className="flex items-center gap-3">
+        <span className="text-primary">{icon}</span>
+        <div
+          role="heading"
+          aria-level={3}
+          className="text-xl font-semibold sm:text-2xl"
+        >
+          {title}
+        </div>
+      </div>
+      {note && (
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {note}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function Contact({
+  lang,
+  selectedService,
+  setSelectedService,
+}: {
+  lang: Lang
+  selectedService: string
+  setSelectedService: (service: string) => void
+}) {
+  const t = content[lang]
+  const serviceOptions = [
+    ...t.services.items.map((item) => item.title),
+    t.contact.recruitment,
+  ]
+
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState("")
+  const [sent, setSent] = useState(false)
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (sending) return
+    const form = event.currentTarget
+    const data = new FormData(form)
+    data.set("service", selectedService)
+    data.set("language", lang)
+    setSending(true)
+    setFeedback("")
+    setSent(false)
+    try {
+      const response = await fetch(new URL("contact.php", document.baseURI), {
+        method: "POST",
+        body: data,
+        headers: { Accept: "application/json" },
+      })
+      const result = await response.json()
+      if (!response.ok || result.ok !== true) throw new Error("send_failed")
+      setSent(true)
+      setFeedback(lang === "es" ? "Tu mensaje fue enviado. Gracias por contactarme." : "Your message was sent. Thank you for getting in touch.")
+      form.reset()
+      setSelectedService("")
+    } catch {
+      setFeedback(lang === "es" ? "No se pudo enviar el mensaje. Inténtalo de nuevo o escribe a eddiersoto@outlook.com." : "Your message could not be sent. Please try again or email eddiersoto@outlook.com.")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <section
+      id="contact"
+      className="scroll-mt-16 border-t border-border/60 py-20 sm:py-28"
+    >
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <SectionHeading
+          kicker={t.contact.kicker}
+          title={t.contact.title}
+          subtitle={t.contact.description}
+        />
+        <div className="mt-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card className="bg-card/60">
+            <CardContent className="pt-6">
+              <form onSubmit={submit} className="grid gap-5" aria-busy={sending}>
+                <div hidden aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormField label={t.contact.name} htmlFor="name">
+                    <Input id="name" name="name" autoComplete="name" maxLength={120} required />
+                  </FormField>
+                  <FormField label={t.contact.email} htmlFor="email">
+                    <Input
+                      id="email"
+                      name="email"
+                      maxLength={254}
+                      type="email"
+                      autoComplete="email"
+                      required
+                    />
+                  </FormField>
+                </div>
+                <FormField label={t.contact.service} htmlFor="service">
+                  <Select
+                    value={selectedService}
+                    onValueChange={setSelectedService}
+                    name="service"
+                    required
+                  >
+                    <SelectTrigger id="service">
+                      <SelectValue placeholder={t.contact.selectPlaceholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField label={t.contact.project} htmlFor="project">
+                  <Textarea
+                    id="project"
+                    name="project"
+                    maxLength={10000}
+                    placeholder={t.contact.projectPlaceholder}
+                    className="min-h-32"
+                    required
+                  />
+                </FormField>
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                  <p className="text-xs text-muted-foreground">
+                    {t.contact.response}
+                  </p>
+                  <Button type="submit" size="lg" disabled={sending}>
+                    {sending ? (lang === "es" ? "Enviando…" : "Sending…") : t.contact.submit}
+                    <ArrowRight />
+                  </Button>
+                </div>
+                {feedback && <p role="status" aria-live="polite" className={sent ? "text-sm text-primary" : "text-sm text-destructive"}>{feedback}</p>}
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/60">
+            <CardHeader>
+              <CardTitle>{t.contact.direct}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ContactLink
+                icon={<Mail />}
+                label="Email"
+                value="eddiersoto@outlook.com"
+                onClick={() => {
+                  window.location.href = "mailto:eddiersoto@outlook.com"
+                }}
+              />
+              <ContactLink
+                icon={<Linkedin />}
+                label="LinkedIn"
+                value="linkedin.com/in/eddiersoto"
+                onClick={() => openUrl("https://linkedin.com/in/eddiersoto")}
+              />
+              <ContactLink
+                icon={<Globe2 />}
+                label={t.contact.whatsapp}
+                value={t.contact.whatsappPending}
+                disabled
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function FormField({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  children: ReactNode
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+    </div>
+  )
+}
+
+function ContactLink({
+  icon,
+  label,
+  value,
+  onClick,
+  disabled = false,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  onClick?: () => void
+  disabled?: boolean
+}) {
+  return (
+    <Button
+      variant="outline"
+      onClick={onClick}
+      disabled={disabled}
+      className="h-auto w-full justify-start gap-4 p-4 text-left whitespace-normal"
+    >
+      <span className="text-primary">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs text-muted-foreground">{label}</span>
+        <span className="mt-1 block truncate text-sm">{value}</span>
+      </span>
+      {!disabled && <ExternalLink />}
+    </Button>
+  )
+}
+
+function Footer({ lang }: { lang: Lang }) {
+  const t = content[lang].footer
+  return (
+    <footer className="border-t border-border/60 py-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div>
+          <div className="text-sm font-medium">© 2026 Eddier Soto Vargas</div>
+          <div className="mt-1 text-xs text-muted-foreground">{t.role}</div>
+        </div>
+        <Button variant="ghost" onClick={() => goTo("home")}>
+          {t.back}
+          <ArrowRight className="-rotate-90" />
+        </Button>
       </div>
     </footer>
-  );
+  )
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
-
 export default function App() {
-  const [lang, setLang] = useState<Lang>("es");
-  const toggle = () => setLang((l) => (l === "es" ? "en" : "es"));
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = window.localStorage.getItem("portfolio-language")
+    return saved === "en" ? "en" : "es"
+  })
+  const [selectedService, setSelectedService] = useState("")
+
+  useEffect(() => {
+    window.localStorage.setItem("portfolio-language", lang)
+    document.documentElement.lang = lang
+    document.title = content[lang].meta.title
+    let description = document.querySelector<HTMLMetaElement>(
+      'meta[name="description"]',
+    )
+    if (!description) {
+      description = document.createElement("meta")
+      description.name = "description"
+      document.head.appendChild(description)
+    }
+    description.content = content[lang].meta.description
+  }, [lang])
+
+  const consult = (service: string) => {
+    setSelectedService(service)
+    goTo("contact")
+  }
 
   return (
-    <LangCtx.Provider value={{ lang, toggle }}>
-      <div className="bg-background text-foreground min-h-screen relative" style={{ fontFamily: "'Outfit', sans-serif" }}>
-        {/* Global background */}
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`, backgroundRepeat: "repeat", backgroundSize: "128px 128px" }} />
-          <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full" style={{ background: "radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 65%)" }} />
-          <div className="absolute top-[30%] -right-60 w-[800px] h-[800px] rounded-full" style={{ background: "radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 65%)" }} />
-          <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(236,72,153,0.04) 0%, transparent 65%)" }} />
-          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,1) 2px, rgba(255,255,255,1) 3px)", backgroundSize: "100% 6px" }} />
-        </div>
-
-        <div className="relative z-10">
-          <Nav />
-          <Hero />
-          <Experience />
-          <Projects />
-          <Skills />
-          <About />
-          <Contact />
-          <Footer />
-        </div>
-      </div>
-    </LangCtx.Provider>
-  );
+    <div className="min-h-screen bg-background text-foreground">
+      <Header lang={lang} setLang={setLang} />
+      <main>
+        <Hero lang={lang} />
+        <Services lang={lang} onConsult={consult} />
+        <Career lang={lang} />
+        <Contact
+          lang={lang}
+          selectedService={selectedService}
+          setSelectedService={setSelectedService}
+        />
+      </main>
+      <Footer lang={lang} />
+    </div>
+  )
 }

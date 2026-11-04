@@ -1,0 +1,16 @@
+PAQUETE PARA HOSTINGER — EDDIER SOTO
+
+1. Usa un plan Web/Cloud con PHP 8.0 o posterior. El constructor visual o un alojamiento solo estático no ejecutan contact.php.
+2. En hPanel abre Administrador de archivos > public_html. Sube y extrae el contenido de este ZIP directamente allí. index.html debe quedar dentro de public_html, sin otra carpeta intermedia.
+3. Edita contact-config.php desde el administrador de archivos. Sustituye CONFIGURAR_CORREO_DE_TU_DOMINIO por un buzón real de tu dominio, por ejemplo contacto@tudominio.com. No cambies el destinatario: ya está fijado en eddiersoto@outlook.com.
+4. Abre tu dominio por HTTPS y realiza un envío de prueba. Comprueba también la carpeta de correo no deseado de Outlook. Si el servidor no acepta el envío, el formulario mostrará un error y conservará los datos.
+
+No necesitas Node, npm ni ejecutar un build en Hostinger. El JavaScript del navegador ya está compilado y es necesario para mantener el diseño React y sus interacciones.
+
+El correo incluye nombre, email, servicio, proyecto/mensaje, idioma y fecha de Costa Rica. Su plantilla HTML usa fondo oscuro y acentos azules. Incluye versión de texto y Reply-To para responder al visitante.
+
+El formulario incluye validación, límite de tamaño, campo antispam y límite de un intento por minuto por IP. Usa el sistema mail() del hosting, sujeto a su configuración, filtros y límites. Que el servidor acepte un mensaje no garantiza su entrega a Outlook.
+
+ESTADO: la web se compila localmente. El envío real y la recepción en Outlook deben verificarse en tu hosting después de configurar el remitente. No se ha publicado ni enviado ningún correo de prueba.
+
+Documentación de Hostinger: https://www.hostinger.com/tutorials/how-to-send-emails-using-php-mail-function/
